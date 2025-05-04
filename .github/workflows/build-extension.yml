@@ -1,0 +1,45 @@
+# Nombre del workflow
+name: Build Firefox Extension using web-ext
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build_with_web_ext:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      # Paso 2: Configurar Node.js (necesario para instalar web-ext)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Puedes usar una versión LTS actual
+
+      # Paso 3: Instalar web-ext globalmente
+      - name: Install web-ext
+        run: npm install --global web-ext
+
+      # Paso 4: Construir la extensión usando web-ext
+      # web-ext build crea un .zip en la carpeta ./web-ext-artifacts/
+      # El nombre del archivo se basa en el manifest (ej: youtubetoolsextension-1.0.zip)
+      - name: Build extension using web-ext
+        run: web-ext build --source-dir ./ --artifacts-dir ./web-ext-artifacts --overwrite-dest
+        # --source-dir ./: Directorio raíz de la extensión
+        # --artifacts-dir ./web-ext-artifacts: Carpeta donde se guardará el .zip
+        # --overwrite-dest: Sobrescribe si ya existe un artefacto con el mismo nombre
+
+      # Paso 5: Subir el artefacto generado por web-ext
+      # Nota: web-ext genera un .zip. Lo subiremos tal cual, pero podrías renombrarlo a .xpi si lo necesitas
+      - name: Upload web-ext artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-tools-extension-firefox-package # Nombre del artefacto
+          path: ./web-ext-artifacts/*.zip # Sube el archivo .zip dentro de la carpeta de artefactos
+                                         # El * es un comodín por si el nombre exacto cambia con la versión
